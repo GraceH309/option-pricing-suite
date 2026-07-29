@@ -1,46 +1,42 @@
-# Option pricing toy toolkit
+# option-pricing-suite
 
-> I work at a quant shop and wanted to re-implement the pricing methods I use
-> day-to-day by hand, partly to review numerical methods.
-> Goal: **zero external dependencies** — only numpy + stdlib.
+Code I wrote to actually understand option pricing instead of just calling a
+library. I'm in quant, so Black-Scholes is something I use but had never
+re-derived from scratch — this closed that gap.
 
-## Methods
+## what's in here
 
-| Method | File | Notes |
-|--------|------|-------|
-| Black-Scholes analytic | `pricing.py` | hand-rolled `_norm_cdf`, no scipy |
-| Monte Carlo (European) | `montecarlo.py` | antithetic + control variate (variance reduction) |
-| Longstaff-Schwartz (American) | `montecarlo.py` | quadratic basis for early exercise |
-| CRR binomial tree | `binomial.py` | European + American |
-| Implied volatility | `volatility.py` | bisection + Newton-Raphson |
+- `pricing.py` — Black-Scholes call/put + Greeks. I hand-rolled `_norm_cdf`
+  (Abramowitz & Stegun 26.2.17) instead of importing scipy, because I wanted
+  zero external deps and the approximation is good to ~1e-7 anyway. That part
+  I'm happy with.
+- `montecarlo.py` — European MC with antithetic + control variates. The American
+  side uses Longstaff-Schwartz; the `itm.sum() >= 5` threshold for when to run
+  the regression was a guess — fewer paths and the beta estimates get noisy, but
+  I never properly tuned it, just picked 5 and moved on.
+- `binomial.py` — CRR tree. European + American. Oldest code in here, looks it.
+- `volatility.py` — implied vol via bisection + Newton. Newton diverges when
+  vega is near zero, so bisection is the one I actually trust.
 
-## Why I wrote my own norm_cdf
+`run_demo.py` runs all of it and cross-checks the methods against each other.
+`pytest tests/` — 10 tests, mostly put-call parity and finite-difference Greeks.
 
-I could've just done `from scipy.stats import norm`, but for zero deps I
-implemented the Abramowitz & Stegun 26.2.17 approximation myself. Accuracy
-~1e-7, good enough for pricing. (see the comment on `_norm_cdf` in `pricing.py`)
+## the numpy thing
 
-## Run it
+numpy 2.x shipped and broke my original code (some array-indexing change). I
+pinned `numpy<2` in requirements rather than rewrite at midnight — should fix
+properly later, it's a TODO I keep skipping.
 
-```bash
-pip install -r requirements.txt
-python run_demo.py   # cross-checks every method
-pytest tests/ -q     # 10 tests, all numerical-consistency checks
-```
+## didn't finish
 
-## TODO
+Path-dependent options (Asian, Barrier). I started an Asian MC with
+Brownian-bridge conditioning for the variance reduction and couldn't get it to
+behave, so it's sitting dead in `experiments/`. Maybe revisit before onsites.
 
-- [ ] Want to add path-dependent options (Asian, barrier)
-- [ ] Greeks finite-difference tolerance of 1e-2 is a bit loose; want to tighten to 1e-4
-- [ ] American LSM basis is only quadratic right now; curious about higher orders
+## run
 
-## Known rough edges
+    pip install -r requirements.txt
+    python run_demo.py
+    pytest tests/ -q
 
-- In the American LSM, `itm.sum() >= 5` is a made-up threshold — when too few
-  paths are in-the-money the regression gets unstable. If asked in an interview
-  I need to be able to justify the 5.
-- Binomial and implied-vol code is the oldest; style is rougher than the rest. Left as-is for now.
-
----
-
-*Pure practice + review, not a trading system. The method table in this README is my own notes, not copied from a book.*
+Practice repo, not a trading tool. Don't point it at a real book.
