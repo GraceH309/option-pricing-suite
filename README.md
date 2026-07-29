@@ -1,47 +1,46 @@
-# Option Pricing & Derivatives Analytics Suite
+# Option pricing toy toolkit
 
-A self-contained Python library that prices equity options with **four independent
-numerical methods** and cross-checks them — built to demonstrate rigorous
-quant-domain + CS ability (numerical methods, Monte Carlo with variance
-reduction, dynamic-programming-style American pricing, and root-finding).
+> I work at a quant shop and wanted to re-implement the pricing methods I use
+> day-to-day by hand, partly to review numerical methods.
+> Goal: **zero external dependencies** — only numpy + stdlib.
 
-> Personal project by a quant (Huaxin Capital) formalizing CS fundamentals for grad study.
+## Methods
 
-## What it does
+| Method | File | Notes |
+|--------|------|-------|
+| Black-Scholes analytic | `pricing.py` | hand-rolled `_norm_cdf`, no scipy |
+| Monte Carlo (European) | `montecarlo.py` | antithetic + control variate (variance reduction) |
+| Longstaff-Schwartz (American) | `montecarlo.py` | quadratic basis for early exercise |
+| CRR binomial tree | `binomial.py` | European + American |
+| Implied volatility | `volatility.py` | bisection + Newton-Raphson |
 
-| Method | Module | Highlights |
-|---|---|---|
-| Black-Scholes analytics | `pricing.py` | Closed-form call/put price + 5 Greeks (delta/gamma/vega/theta/rho) |
-| Monte Carlo (European) | `montecarlo.py` | GBM terminal simulation with **antithetic variates + control variate** |
-| Longstaff-Schwartz (American) | `montecarlo.py` | Least-squares Monte Carlo with quadratic basis for early-exercise |
-| CRR binomial tree | `binomial.py` | Cox-Ross-Rubinstein lattice, European **and** American |
-| Implied vol solver | `volatility.py` | Bisection + Newton-Raphson recovery of σ from a market price |
+## Why I wrote my own norm_cdf
 
-All methods converge to the same price on a plain-vanilla option, and the
-American premium is correctly positive vs its European counterpart.
+I could've just done `from scipy.stats import norm`, but for zero deps I
+implemented the Abramowitz & Stegun 26.2.17 approximation myself. Accuracy
+~1e-7, good enough for pricing. (see the comment on `_norm_cdf` in `pricing.py`)
 
 ## Run it
 
 ```bash
 pip install -r requirements.txt
-python run_demo.py        # cross-check all methods on one ATM option
-pytest tests/ -q          # 13 tests, all numerical-consistency checks
+python run_demo.py   # cross-checks every method
+pytest tests/ -q     # 10 tests, all numerical-consistency checks
 ```
 
-## Layout
+## TODO
 
-```
-optionlib/
-  pricing.py      BS analytics + Greeks
-  montecarlo.py   MC European (variance-reduced) + LSM American
-  binomial.py     CRR tree (EU / US)
-  volatility.py   implied-vol solver
-tests/            pytest suite (BS vs MC vs tree, Greeks vs finite diff, IV recovery)
-run_demo.py       one-command cross-check
-```
+- [ ] Want to add path-dependent options (Asian, barrier)
+- [ ] Greeks finite-difference tolerance of 1e-2 is a bit loose; want to tighten to 1e-4
+- [ ] American LSM basis is only quadratic right now; curious about higher orders
 
-## A note on integrity
+## Known rough edges
 
-This is original code written to *demonstrate* methods I use daily. Every result
-is reproducible (fixed RNG seeds) and verified by the test suite — read the source
-and the tests before citing it anywhere.
+- In the American LSM, `itm.sum() >= 5` is a made-up threshold — when too few
+  paths are in-the-money the regression gets unstable. If asked in an interview
+  I need to be able to justify the 5.
+- Binomial and implied-vol code is the oldest; style is rougher than the rest. Left as-is for now.
+
+---
+
+*Pure practice + review, not a trading system. The method table in this README is my own notes, not copied from a book.*
