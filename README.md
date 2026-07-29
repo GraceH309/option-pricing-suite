@@ -45,4 +45,3 @@ run_demo.py       one-command cross-check
 This is original code written to *demonstrate* methods I use daily. Every result
 is reproducible (fixed RNG seeds) and verified by the test suite — read the source
 and the tests before citing it anywhere.
-# option-pricing-suite
