@@ -2,9 +2,7 @@
 
 Note: The large volume of early commits stems from migrating offline notes to this repository. I will keep making incremental improvements over time.
 
-Code I wrote to actually understand option pricing instead of just calling a
-library. I'm in quant, so Black-Scholes is something I use but had never
-re-derived from scratch — this closed that gap.
+Code I wrote to actually understand option pricing instead of just calling a library. I'm in quant, so Black-Scholes is something I use but had never re-derived from scratch — this closed that gap.
 
 ## what's in here
 
